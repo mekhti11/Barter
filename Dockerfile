@@ -1,24 +1,28 @@
-FROM openjdk:17-jdk-slim
+FROM gradle:8.4-jdk17 AS build
 
 WORKDIR /app
 
-# Copy gradle wrapper and build files
-COPY gradlew .
+# Copy gradle files
+COPY build.gradle settings.gradle ./
 COPY gradle gradle
-COPY build.gradle .
-COPY settings.gradle .
+COPY gradlew ./
 
 # Copy source code
 COPY src src
 
-# Make gradlew executable
-RUN chmod +x ./gradlew
-
 # Build the application
-RUN ./gradlew clean bootJar -x check -x test
+RUN gradle clean bootJar -x test --no-daemon
+
+# Runtime stage
+FROM openjdk:17-jdk-slim
+
+WORKDIR /app
+
+# Copy the built JAR from build stage
+COPY --from=build /app/build/libs/*.jar app.jar
 
 # Expose port
 EXPOSE 8080
 
 # Run the application
-CMD ["java", "-Dserver.port=${PORT}", "-Dspring.profiles.active=prod", "-jar", "build/libs/barter-1.0.0-boot.jar"]
+CMD ["java", "-Dserver.port=${PORT:-8080}", "-Dspring.profiles.active=prod", "-jar", "app.jar"]
