@@ -11,12 +11,18 @@ version = '0.0.1-SNAPSHOT'
 java {
     toolchain {
         languageVersion = JavaLanguageVersion.of(17)
+        vendor = JvmVendorSpec.ADOPTIUM
     }
 }
 configurations {
     compileOnly {
         extendsFrom annotationProcessor
     }
+}
+tasks.withType(JavaCompile) {
+    options.encoding = 'UTF-8'
+    sourceCompatibility = '17'
+    targetCompatibility = '17'
 }
 repositories {
     mavenCentral()
@@ -96,19 +102,14 @@ jar {
     archiveClassifier = ''
 }
 
-bootJar {
-    enabled = true
-    archiveClassifier = 'boot'
-}
-
 task stage(dependsOn: ['bootJar'])
 
-// Ensure the JAR is executable
+// Make JAR executable
 bootJar {
     enabled = true
     archiveClassifier = ''
+    archiveFileName = 'barter-app.jar'
 }
-
 tasks.named('test') {
     outputs.dir snippetsDir
     useJUnitPlatform()
